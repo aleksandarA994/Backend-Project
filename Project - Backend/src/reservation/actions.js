@@ -11,12 +11,14 @@ const { con } = database;
 function checkDate(res, date){
 
   const dateInfo = 'SELECT * FROM reservation WHERE Date_and_Time = ?'
+  let checkDate ;
   con.query(dateInfo, date, (err, results)=>{
   if(results[0]){      
   res.status(404).send({message: 'The date is already booked, please choose another one.'});
-  return true;
   }
+  checkDate = results[0];
   }); 
+  return checkDate === undefined;
   }
 
 function createReservation (Date_and_Time, Type_of_Payment, profileId, sportId, facilityId){
@@ -50,9 +52,13 @@ async function create (req, res, next){
 let date = Date_and_Time;
 
 try{
-  if(!checkDate()){
+  if(checkDate(res, date)){
   const createReserv = await createReservation(Date_and_Time, Type_of_Payment, profileId, sportId, facilityId);
   res.status(201).send({success: true, message: 'A reservation was successfully created', body: { Date_and_Time, Type_of_Payment, profileId, sportId, facilityId}});
+  }
+  else {
+    console.log( "Ooops, something went wrong !")
+  
   }
 } catch (error){
   res.status(500).send({ success: false, message: error.message});

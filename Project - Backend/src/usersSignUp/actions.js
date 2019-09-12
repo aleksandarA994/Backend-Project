@@ -14,37 +14,45 @@ Bluebird.promisifyAll(jwt);
 Bluebird.promisifyAll(bcrypt);
 
 // VALIDATION CHECKS
-function checkUsername(res, username){
+function isUsernameValid(res, username){
 
   const usernameInfo = 'SELECT * FROM users_signup WHERE Username = ?'
+  let isUserValid ;
   con.query(usernameInfo, username, (err, results)=>{
+    
   if(results[0]){      
   res.status(404).send({message: 'The username is already taken, please choose another one.'});
-  return true;
   }
-  }); 
+  isUserValid = results[0];
+}); 
+return isUserValid === undefined;
   }
   
-  function checkPass(res, username, password){
+  function isUserPassValid(res, username, password){
   
     const passInfo = 'SELECT * FROM users_signup WHERE Username = ?'
     con.query(passInfo, username, (err, results)=>{
     if(password.length < 5){  
       res.status(403).send({message: 'Password must contain at least 6 characters.'});  
-      return true; 
-    }  
-    });    
+    }
+  });    
+  return password.length > 5; 
   }
  
-  function checkEmail(res, email){
+  function isUserEmailValid(res, email){
     
     const emailInfo = 'SELECT * FROM users_signup WHERE Email = ?'
+    let isMailValid ;
+
     con.query(emailInfo, email, (err, results)=>{
-    if(results[0]){      
-      res.status(404).send({message: 'The email already exists, please choose another one.'});
-      return true;
-     }    
+    
+      if(results[0]){      
+      res.status(404).send({message: 'The email is already taken, please choose another one.'});
+      }
+      isMailValid = results[0];
     }); 
+    return isMailValid === undefined;
+
    }
   
 
@@ -85,11 +93,15 @@ const passHash = bcrypt.hashSync(Password, getRounds);
 
 try{
 
-if(!checkPass(res, username, password) && !checkEmail(res, email) && !checkUsername(res, username) ){
+if(isUserPassValid(res, username, password) && isUserEmailValid(res, email) && isUsernameValid(res, username) ){
 const createUser = await usersSignUp(Username, Email, passHash);
 
 res.status(201).send({success: true, message: 'The user has been successfully registered', body: { Username, Email, Password}});  
 } 
+else {
+  console.log( "Ooops, something went wrong !")
+
+}
 
 } catch (error){
   res.status(500).send({ success: false, message: error.message});
